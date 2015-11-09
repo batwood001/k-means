@@ -1,0 +1,17 @@
+{
+  "name": "k-means",
+  "version": "1.0.0",
+  "description": "",
+  "main": "k-means.js",
+  "dependencies": {
+    "get-pixels": "^3.2.3",
+    "gm": "^1.21.1",
+    "save-pixels": "^2.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
