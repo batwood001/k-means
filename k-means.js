@@ -33,7 +33,6 @@ getPixels('./resize.png', function(err, pixels) {
   console.log('OLDLENGTH', pixels.data.length)
   var ms = formatPixels(pixels.data);
   // for (var i = 0; i < 5; i++) { // arbitrary
-    // console.log(i)
     assignedMs = assignMsToClosestCentroids(ms, centroids);
     console.log('assignedMs', assignedMs[0])
     console.log('CENTROIDS', centroids)
@@ -42,53 +41,28 @@ getPixels('./resize.png', function(err, pixels) {
   // } OUTSIDE THE LOOP
   newPixels = _.chain(assignedMs)
     .map(function(m) {
-      return centroids[m.C] // don't parseInt here; do it when centroid coordinates are assigned;
+      return centroids[m.C];
     })
     .flatten()
     .value();
     pixels.data = newPixels;
-  // console.log(pixels.data[0])
-  // console.log(pixels.data[1])
-  // console.log(pixels.data[2])
-  // console.log(pixels.data[3])
-  // console.log(pixels.data[4])
-  // console.log(pixels.data[5])
   console.log('NEWLENGTH', pixels.data.length)
   savePixels(pixels, 'png').pipe(newImage);
 })
 
 function findKMeans(ms) {
   console.log('finding means...')
-  // return _.chain(ms)
-  //   .groupBy(function(m) {
-  //     return m.C;
-  //   })
-  //   .map(function(val, key) {
-  //     var vectors = _.map(val, function(arr) {
-  //         return arr.vector;
-  //       });
-  //     console.log(mean(vectors))
-  //     return {
-  //       vector: mean(vectors),
-  //       id: key
-  //     }
-  //   })
-  //   .value()
-
-    var grouped = _.groupBy(ms, function(m) {
+  return _.chain(ms)
+    .groupBy(function(m) {
       return m.C;
     })
-
-    var keyed = _.mapValues(grouped, function(val) {
-      // console.log('val', val)
+    .mapValues(function(val) {
       var vectors = _.map(val, function(arr) {
-          return arr.vector;
-        });
-      // console.log(vectors)
+        return arr.vector;
+      });
       return mean(vectors);
-    });
-    // console.log(keyed)
-    return keyed;
+    })
+    .value();
 }
 
 function findClosestCentroid(m, centroids) {
