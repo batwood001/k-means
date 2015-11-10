@@ -149,10 +149,3 @@ function mean(vectors) {
       }) / dimension.length;
     })
 }
-
-
-// var x = zeros([32, 32])
-// x.set(16, 16, 255)
- 
-//Save to a file 
-// savePixels(x, "png").pipe(process.stdout)
