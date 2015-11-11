@@ -1,29 +1,24 @@
 var fs = require('fs'), 
     gm = require('gm').subClass({imageMagick: true});;
 
-gm('./israel.jpg')
-  .resize(100, 100)
-  .write('./resize.png', function (err) {
+var time = new Date();
+
+gm('./tree.jpg')
+  .resize(400, 400)
+  .write('./resize.png' + time, function (err) {
     if (err) console.log('error:', err);
     console.log('done')
   })
-
-// gm('./israel.jpg')
-//   .identify(function (err, data) {
-//     if (!err) console.log('data', data)
-//     console.log(err)
-//   });
 
 var getPixels = require('get-pixels'),
     savePixels = require('save-pixels'),
     fs = require('fs'),
     _ = require('lodash');
 
-var K = 2;
-var centroids = generateKRandomCentroids(K, 4, 0, 255)
+var K = 5;
 var assignedMs;
 
-var newImage = fs.createWriteStream('new.png')
+var newImage = fs.createWriteStream('tree' + time + '.png')
 
 getPixels('./resize.png', function(err, pixels) {
   if (err) {
@@ -32,13 +27,12 @@ getPixels('./resize.png', function(err, pixels) {
   }
   console.log('OLDLENGTH', pixels.data.length)
   var ms = formatPixels(pixels.data);
-  // for (var i = 0; i < 5; i++) { // arbitrary
+  var centroids = generateKRandomCentroids(K, ms)
+  // for (var i = 0; i < 5; i++) {
     assignedMs = assignMsToClosestCentroids(ms, centroids);
-    console.log('assignedMs', assignedMs[0])
-    console.log('CENTROIDS', centroids)
     centroids = findKMeans(assignedMs);
-    console.log('CENTROIDS', centroids)
-  // } OUTSIDE THE LOOP
+    console.log(centroids)
+  // }
   newPixels = _.chain(assignedMs)
     .map(function(m) {
       return centroids[m.C];
@@ -67,18 +61,18 @@ function findKMeans(ms) {
 
 function findClosestCentroid(m, centroids) {
   return _.reduce(centroids, function(assignedCentroid, centroid) {
-    if (magnitude(difference(assignedCentroid.vector, m.vector)) < magnitude(difference(centroid.vector, m.vector))) {
+    if (magnitude(difference(m.vector, assignedCentroid.vector)) > magnitude(difference(m.vector, centroid.vector))) {
       return centroid;
     }
-    return assignedCentroid;;
-  }).id;
+    return assignedCentroid;
+  });
 }
 
 function assignMsToClosestCentroids(ms, centroids) {
   console.log('assigning ms...')
   return _.map(ms, function(m, i) {
     // console.log('finding closest centroid to pixel #', i)
-      m.C = findClosestCentroid(m, centroids);
+      m.C = findClosestCentroid(m, centroids).id;
       return m;
     });
 }
@@ -89,28 +83,24 @@ function formatPixels(pixelData) {
     return {
       vector: vector,
       C: null
-    }
-  })
+    };
+  });
 }
 
-function emptyVector(length) {
-  var vector = [];
-  for (var i = 0; i < length; i++) {
-    vector.push(0);
-  }
-  return vector
-}
-
-function generateKRandomCentroids(K, dimension, min, max) {
+function generateKRandomCentroids(K, data) {
   var centroids = [];
+  var used = {};
+
   for (var i = 0; i < K; i++) {
-    var vector = _.map(emptyVector(dimension), function(dim) {
-      return getRandomInt(min, max);
-    })
+    var idx = getRandomInt(0, data.length);
+    while (used[idx]) {
+      idx = getRandomInt(0, data.length);
+    }
     centroids.push({
-      vector: vector,
+      vector: data[idx].vector,
       id: i.toString()
     });
+    used[idx] = true;
   }
   return centroids;
 }
@@ -143,9 +133,9 @@ function magnitude(vector) {
 
 function mean(vectors) {
   var zipped = _.zip.apply(null, vectors);
-    return _.map(zipped, function(dimension) {
-      return _.reduce(dimension, function(acc, curr){
-        return acc + curr;
-      }) / dimension.length;
-    })
+  return _.map(zipped, function(dimension) {
+    return _.reduce(dimension, function(acc, curr){
+      return acc + curr;
+    }) / dimension.length;
+  })
 }
