@@ -1,37 +1,40 @@
 var fs = require('fs'), 
-    gm = require('gm').subClass({imageMagick: true});;
+    gm = require('gm').subClass({imageMagick: true}),
+    getPixels = require('get-pixels'),
+    savePixels = require('save-pixels'),
+    _ = require('lodash');
+
+
+/* CONFIGURE */
+
+var K = 5;
+var jpeg_name = 'tree';
+
+/* END CONFIGURE */
 
 var time = new Date();
 
-gm('./tree.jpg')
+gm('./' + jpeg_name + '.jpg')
   .resize(400, 400)
   .write('./resize.png' + time, function (err) {
     if (err) console.log('error:', err);
     console.log('done')
   })
 
-var getPixels = require('get-pixels'),
-    savePixels = require('save-pixels'),
-    fs = require('fs'),
-    _ = require('lodash');
 
-var K = 5;
 var assignedMs;
-
-var newImage = fs.createWriteStream('tree' + time + '.png')
+var newImage = fs.createWriteStream(jpeg_name + time + '.png')
 
 getPixels('./resize.png', function(err, pixels) {
   if (err) {
     console.log('err', err)
     return;
   }
-  console.log('OLDLENGTH', pixels.data.length)
   var ms = formatPixels(pixels.data);
   var centroids = generateKRandomCentroids(K, ms)
   // for (var i = 0; i < 5; i++) {
     assignedMs = assignMsToClosestCentroids(ms, centroids);
     centroids = findKMeans(assignedMs);
-    console.log(centroids)
   // }
   newPixels = _.chain(assignedMs)
     .map(function(m) {
@@ -40,7 +43,7 @@ getPixels('./resize.png', function(err, pixels) {
     .flatten()
     .value();
     pixels.data = newPixels;
-  console.log('NEWLENGTH', pixels.data.length)
+
   savePixels(pixels, 'png').pipe(newImage);
 })
 
