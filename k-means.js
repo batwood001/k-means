@@ -7,8 +7,9 @@ var fs = require('fs'),
 
 /* CONFIGURE */
 
-var K = 3;
-var jpeg_name = 'tree';
+var K = 5;
+var jpeg_name = 'israel';
+var NUM_ITERATIONS = 5;
 
 /* END CONFIGURE */
 
@@ -32,12 +33,12 @@ getPixels('./resize.png', function(err, pixels) {
   }
   var ms = formatPixels(pixels.data);
   var centroids = generateKRandomCentroids(K, ms)
-  console.log('init centroids', centroids)
-  // for (var i = 0; i < 2; i++) {
+  console.log('initial centroids:', centroids)
+  for (var i = 0; i < NUM_ITERATIONS; i++) {
     assignedMs = assignMsToClosestCentroids(ms, centroids);
     centroids = findKMeans(assignedMs);
-    console.log('new centroids #', i, centroids)
-  // }
+    console.log('new centroids:', centroids)
+  }
   newPixels = _.chain(assignedMs)
     .map(function(m) {
       return centroids[m.C];
@@ -50,7 +51,6 @@ getPixels('./resize.png', function(err, pixels) {
 })
 
 function findKMeans(ms) {
-  console.log('finding means...')
   return _.chain(ms)
     .groupBy(function(m) {
       return m.C;
@@ -65,16 +65,15 @@ function findKMeans(ms) {
 }
 
 function findClosestCentroid(m, centroids) {
-  return _.transform(centroids, function(closest, id, vector) {
+  return _.transform(centroids, function(closest, vector, id) {
     if (magnitude(difference(m.vector, closest.vector)) > magnitude(difference(m.vector, vector))) {
-      return {id: id, vector: vector};
-      }
-    return closest;
-  });
+      closest.id = id;
+      closest.vector = vector;
+    }
+  }, {id: '0', vector: centroids[0]});
 }
 
 function assignMsToClosestCentroids(ms, centroids) {
-  console.log('assigning ms...')
   return _.map(ms, function(m) {
       m.C = findClosestCentroid(m, centroids).id;
       return m;
@@ -132,9 +131,7 @@ function magnitude(vector) {
 }
 
 function mean(vectors) {
-  console.log(vectors.length)
-  var zipped = _.zip.apply(null, vectors); // Maximum call stack size exceeded
-  console.log('made it here')
+  var zipped = _.zip.apply(null, vectors);
   return _.map(zipped, function(dimension) {
     return _.reduce(dimension, function(acc, curr){
       return acc + curr;
