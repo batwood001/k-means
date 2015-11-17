@@ -7,7 +7,7 @@ var fs = require('fs'),
 
 /* CONFIGURE */
 
-var K = 5;
+var K = 3;
 var jpeg_name = 'tree';
 
 /* END CONFIGURE */
@@ -16,7 +16,7 @@ var time = new Date();
 
 gm('./' + jpeg_name + '.jpg')
   .resize(400, 400)
-  .write('./resize.png' + time, function (err) {
+  .write('./resize.png', function (err) {
     if (err) console.log('error:', err);
     console.log('done')
   })
@@ -32,9 +32,11 @@ getPixels('./resize.png', function(err, pixels) {
   }
   var ms = formatPixels(pixels.data);
   var centroids = generateKRandomCentroids(K, ms)
-  // for (var i = 0; i < 5; i++) {
+  console.log('init centroids', centroids)
+  // for (var i = 0; i < 2; i++) {
     assignedMs = assignMsToClosestCentroids(ms, centroids);
     centroids = findKMeans(assignedMs);
+    console.log('new centroids #', i, centroids)
   // }
   newPixels = _.chain(assignedMs)
     .map(function(m) {
@@ -63,18 +65,17 @@ function findKMeans(ms) {
 }
 
 function findClosestCentroid(m, centroids) {
-  return _.reduce(centroids, function(assignedCentroid, centroid) {
-    if (magnitude(difference(m.vector, assignedCentroid.vector)) > magnitude(difference(m.vector, centroid.vector))) {
-      return centroid;
-    }
-    return assignedCentroid;
+  return _.transform(centroids, function(closest, id, vector) {
+    if (magnitude(difference(m.vector, closest.vector)) > magnitude(difference(m.vector, vector))) {
+      return {id: id, vector: vector};
+      }
+    return closest;
   });
 }
 
 function assignMsToClosestCentroids(ms, centroids) {
   console.log('assigning ms...')
-  return _.map(ms, function(m, i) {
-    // console.log('finding closest centroid to pixel #', i)
+  return _.map(ms, function(m) {
       m.C = findClosestCentroid(m, centroids).id;
       return m;
     });
@@ -91,18 +92,14 @@ function formatPixels(pixelData) {
 }
 
 function generateKRandomCentroids(K, data) {
-  var centroids = [];
   var used = {};
-
+  var centroids = {};
   for (var i = 0; i < K; i++) {
     var idx = getRandomInt(0, data.length);
     while (used[idx]) {
       idx = getRandomInt(0, data.length);
     }
-    centroids.push({
-      vector: data[idx].vector,
-      id: i.toString()
-    });
+    centroids[i] = data[idx].vector;
     used[idx] = true;
   }
   return centroids;
@@ -135,7 +132,9 @@ function magnitude(vector) {
 }
 
 function mean(vectors) {
-  var zipped = _.zip.apply(null, vectors);
+  console.log(vectors.length)
+  var zipped = _.zip.apply(null, vectors); // Maximum call stack size exceeded
+  console.log('made it here')
   return _.map(zipped, function(dimension) {
     return _.reduce(dimension, function(acc, curr){
       return acc + curr;
