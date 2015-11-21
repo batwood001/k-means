@@ -8,9 +8,9 @@ After cloning the repo, `npm install`. You may need to install [ImageMagick](htt
 
 ## Results
 
-An interesting pattern emerged while generating k-means'd versions of my profile picture. Here are all of the samples I ran:
+An interesting pattern emerged while generating k-means'd versions of my profile picture. In 10 runs of the algorithm, with 10 iterations each and K=3, two local optima emerged (see the [images/10_3/](images/10_3/) directory for all 10 runs).
 ![Alt text](images/10_3/israel+iters=10+K=3+datetime=Fri Nov 20 2015 23:23:10 GMT-0600 (CST).png "Title")
-
+![Alt text](images/10_3/israel+iters=10+K=3+datetime=Fri Nov 20 2015 23:24:54 GMT-0600 (CST).png "Title")
 
 ## Disclaimer
 The code and this README are both works-in-progress. Feel free to contact me with suggestions!
