@@ -6,5 +6,11 @@ This is an implementation of the [k-means clustering algorithm](https://en.wikip
 ## How to use
 After cloning the repo, `npm install`. You may need to install [ImageMagick](http://www.imagemagick.org/script/index.php), which is easiest done with [Homebrew](http://brew.sh/). Drop a `.jpg` image into the directory, and configure the variables `jpeg_name`, `NUM_ITERATIONS`, and `k` in `k-means.js` accordingly. Then run `node k-means.js` to transform your image!
 
+## Results
+
+An interesting pattern emerged while generating k-means'd versions of my profile picture. Here are all of the samples I ran:
+![Alt text](images/10_3/israel+iters=10+K=3+datetime=Fri Nov 20 2015 23:23:10 GMT-0600 (CST).png "Title")
+
+
 ## Disclaimer
 The code and this README are both works-in-progress. Feel free to contact me with suggestions!
