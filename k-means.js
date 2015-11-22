@@ -2,21 +2,23 @@ var fs = require('fs'),
     gm = require('gm').subClass({imageMagick: true}),
     getPixels = require('get-pixels'),
     savePixels = require('save-pixels'),
-    _ = require('lodash');
+    _ = require('lodash'),
+    Promise = require('bluebird');
 
+var getPixelsAsync = Promise.promisify(getPixels);
 
 /* CONFIGURE */
 
-var K = 5;
-var jpeg_name = 'israel';
-var NUM_ITERATIONS = 5;
+var K = 3;
+var jpeg_name = 'images/beach';
+var NUM_ITERATIONS = 10;
 
 /* END CONFIGURE */
 
 var time = new Date();
 
 gm('./' + jpeg_name + '.jpg')
-  .resize(400, 400)
+  .resize(150, 150)
   .write('./resize.png', function (err) {
     if (err) console.log('error:', err);
     console.log('done')
@@ -24,21 +26,31 @@ gm('./' + jpeg_name + '.jpg')
 
 
 var assignedMs;
-var newImage = fs.createWriteStream(jpeg_name + time + '.png')
+var newImage = fs.createWriteStream(jpeg_name + '+iters=' + NUM_ITERATIONS.toString() + '+K=' + K.toString() + '+datetime=' + time + '.png')
 
-getPixels('./resize.png', function(err, pixels) {
-  if (err) {
-    console.log('err', err)
-    return;
-  }
+getPixelsAsync('./resize.png')
+  .then(kMeans)
+  .then(savePixelsAsImage)
+  .catch(function(err) {
+    console.error(err)
+  })
+
+function savePixelsAsImage(pixels) {
+  savePixels(pixels, 'png').pipe(newImage);
+}
+
+function kMeans(pixels) {
   var ms = formatPixels(pixels.data);
   var centroids = generateKRandomCentroids(K, ms)
   console.log('initial centroids:', centroids)
   for (var i = 0; i < NUM_ITERATIONS; i++) {
+    console.log('iteration # ', i)
+    console.time('took')
     assignedMs = assignMsToClosestCentroids(ms, centroids);
     centroids = findKMeans(assignedMs);
-    console.log('new centroids:', centroids)
+    console.timeEnd('took')
   }
+  console.log('new centroids:', centroids)
   newPixels = _.chain(assignedMs)
     .map(function(m) {
       return centroids[m.C];
@@ -47,8 +59,8 @@ getPixels('./resize.png', function(err, pixels) {
     .value();
     pixels.data = newPixels;
 
-  savePixels(pixels, 'png').pipe(newImage);
-})
+  return pixels;
+}
 
 function findKMeans(ms) {
   return _.chain(ms)
@@ -75,9 +87,9 @@ function findClosestCentroid(m, centroids) {
 
 function assignMsToClosestCentroids(ms, centroids) {
   return _.map(ms, function(m) {
-      m.C = findClosestCentroid(m, centroids).id;
-      return m;
-    });
+    m.C = findClosestCentroid(m, centroids).id;
+    return m;
+  });
 }
 
 function formatPixels(pixelData) {
