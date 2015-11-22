@@ -1,48 +1,13 @@
-var fs = require('fs'), 
-    gm = require('gm').subClass({imageMagick: true}),
-    getPixels = require('get-pixels'),
-    savePixels = require('save-pixels'),
-    _ = require('lodash'),
-    Promise = require('bluebird');
+var _ = require('lodash'),
+    config = require('./config');
 
-var getPixelsAsync = Promise.promisify(getPixels);
+var K = config.K;
+var NUM_ITERATIONS = config.NUM_ITERATIONS;
 
-/* CONFIGURE */
-
-var K = 3;
-var jpeg_name = 'images/beach';
-var NUM_ITERATIONS = 10;
-
-/* END CONFIGURE */
-
-var time = new Date();
-
-gm('./' + jpeg_name + '.jpg')
-  .resize(150, 150)
-  .write('./resize.png', function (err) {
-    if (err) console.log('error:', err);
-    console.log('done')
-  })
-
-
-var assignedMs;
-var newImage = fs.createWriteStream(jpeg_name + '+iters=' + NUM_ITERATIONS.toString() + '+K=' + K.toString() + '+datetime=' + time + '.png')
-
-getPixelsAsync('./resize.png')
-  .then(kMeans)
-  .then(savePixelsAsImage)
-  .catch(function(err) {
-    console.error(err)
-  })
-
-function savePixelsAsImage(pixels) {
-  savePixels(pixels, 'png').pipe(newImage);
-}
-
-function kMeans(pixels) {
-  var ms = formatPixels(pixels.data);
+module.exports.kMeans = function(ms) {
   var centroids = generateKRandomCentroids(K, ms)
   console.log('initial centroids:', centroids)
+
   for (var i = 0; i < NUM_ITERATIONS; i++) {
     console.log('iteration # ', i)
     console.time('took')
@@ -51,15 +16,15 @@ function kMeans(pixels) {
     console.timeEnd('took')
   }
   console.log('new centroids:', centroids)
-  newPixels = _.chain(assignedMs)
+
+  var newMs = _.chain(assignedMs)
     .map(function(m) {
       return centroids[m.C];
     })
     .flatten()
     .value();
-    pixels.data = newPixels;
-
-  return pixels;
+  
+  return newMs;
 }
 
 function findKMeans(ms) {
@@ -89,16 +54,6 @@ function assignMsToClosestCentroids(ms, centroids) {
   return _.map(ms, function(m) {
     m.C = findClosestCentroid(m, centroids).id;
     return m;
-  });
-}
-
-function formatPixels(pixelData) {
-  var vectors = _.chunk(pixelData, 4);
-  return _.map(vectors, function(vector){
-    return {
-      vector: vector,
-      C: null
-    };
   });
 }
 
